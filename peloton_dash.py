@@ -13,8 +13,8 @@ st.set_page_config(layout="wide")
 
 # set divider for peloton logo:
 h1, h2, h3 = st.columns([6,1,6])
-with h2:
-    #st.image("./images/Clap_V02.gif")
+# with h2:
+#     st.image("./images/Clap_V02.gif")
 
 # set divider for title:
 t1, t2, t3, t4 = st.columns([2, 3.5, 0.12, 0.5])
