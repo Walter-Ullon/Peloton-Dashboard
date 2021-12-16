@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 from feature_engineering_functions import *
 from EDA_functions import *
+import os
 
 ########################################################################################################################
 # Header
@@ -12,9 +13,11 @@ from EDA_functions import *
 st.set_page_config(layout="wide")
 
 # set divider for peloton logo:
+path = os.path.dirname(__file__)
+
 h1, h2, h3 = st.columns([6,1,6])
-# with h2:
-#     st.image("./images/Clap_V02.gif")
+with h2:
+    st.image(path + "/images/Clap_V02.gif")
 
 # set divider for title:
 t1, t2, t3, t4 = st.columns([2, 3.5, 0.12, 0.5])
@@ -22,7 +25,7 @@ with t2:
     # set dashboard title:
     st.title('My Peloton Workouts Dashboard')
 with t3:
-    st.image('./images/LI-In-Bug.png', width=30)
+    st.image(path + '/images/LI-In-Bug.png', width=30)
 with t4:
     st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
 
@@ -36,7 +39,7 @@ with st1:
     st.markdown('4. Click **DOWNLOAD WORKOUTS**.')
 
 with st2:
-    st.image('./images/instructions.png', width=700)
+    st.image(path + '/images/instructions.png', width=700)
 st.markdown('---')
 ########################################################################################################################
 # KPIs:
@@ -73,7 +76,7 @@ if uploaded_file is not None:
         ascending=False).index.tolist()[0])
 
     # get top instructor image:
-    hero_img = "./images/" + favorite_instructor + ".png"
+    hero_img = path + "/images/" + favorite_instructor + ".png"
 
     # set the KPI columns:
     # trick: use kpi0 to pad columns and align center...
