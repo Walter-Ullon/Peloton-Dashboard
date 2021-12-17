@@ -69,3 +69,24 @@ def get_workout_type(df):
 # return instructor images matching top value given by y:
 def get_hero(df, y):
     hero = df.loc[df[y].idxmax(), "Instructor Name"]
+
+
+# get longest workout streak
+def longest_streak(df, date_col):
+    i0max, i1max = 0, 0
+    i0 = 0
+    for i1, date in enumerate(df[date_col]):
+        if date - df[date_col][i0] != np.timedelta64(i1-i0, 'D'):
+            if i1 - i0 > i1max - i0max:
+                i0max, i1max = i0, i1
+            i0 = i1
+    longest_streak = len(df[date_col][i0max:i1max])
+    return longest_streak
+
+
+# get total workout time (hours):
+def get_total_workout_time(df, time_col):
+    df[time_col].replace('None', 0, inplace=True)
+    minutes = [int(x) for x in df[time_col]]
+    total = round(sum(minutes)/60, 2)
+    return total

@@ -27,8 +27,6 @@ def count_histogram(df, x, color, w, h):
     return fig
 
 
-
-
 # plots scatter matrix:
 def scatter_matrix(df, category, dims, w, h):
     fig = px.scatter_matrix(df, dimensions=dims, color=category)

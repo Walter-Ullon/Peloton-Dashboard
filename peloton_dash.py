@@ -13,11 +13,9 @@ import os
 st.set_page_config(layout="wide")
 
 # set divider for peloton logo:
-path = os.path.dirname(__file__)
-
 h1, h2, h3 = st.columns([6,1,6])
 with h2:
-    st.image(path + "/images/Clap_V02.gif")
+    st.image("./images/Clap_V02.gif")
 
 # set divider for title:
 t1, t2, t3, t4 = st.columns([2, 3.5, 0.12, 0.5])
@@ -25,7 +23,7 @@ with t2:
     # set dashboard title:
     st.title('My Peloton Workouts Dashboard')
 with t3:
-    st.image(path + '/images/LI-In-Bug.png', width=30)
+    st.image('./images/LI-In-Bug.png', width=30)
 with t4:
     st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
 
@@ -39,7 +37,7 @@ with st1:
     st.markdown('4. Click **DOWNLOAD WORKOUTS**.')
 
 with st2:
-    st.image(path + '/images/instructions.png', width=700)
+    st.image('./images/instructions.png', width=700)
 st.markdown('---')
 ########################################################################################################################
 # KPIs:
@@ -47,19 +45,6 @@ st.markdown('---')
 # file upload:
 uploaded_file = st.file_uploader("Upload .csv")
 if uploaded_file is not None:
-     # To read file as bytes:
-    # bytes_data = uploaded_file.getvalue()
-     # st.write(bytes_data)
-
-     # # To convert to a string based IO:
-     # stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-     # st.write(stringio)
-
-     # # To read file as string:
-     # string_data = stringio.read()
-     # st.write(string_data)
-
-     # Can be used wherever a "file-like" object is accepted:
     df = pd.read_csv(uploaded_file)
 
      # basic feature engineering:
@@ -68,28 +53,36 @@ if uploaded_file is not None:
     df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
     df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
     df['workout: title'] = get_workout_type(df)
-
-    # get KPI Data:
-    total_cals = "{:,}".format(int(df['Calories Burned'].sum()))
-    total_workouts = int(df["Workout Timestamp"].count().sum())
-    favorite_instructor = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
-        ascending=False).index.tolist()[0])
-
-    # get top instructor image:
-    hero_img = path + "/images/" + favorite_instructor + ".png"
+    st.markdown('---')
 
     # set the KPI columns:
     # trick: use kpi0 to pad columns and align center...
-    kpi0, kpi1, kpi2, kpi3 = st.columns([0.5, 1.5, 1.7, 1])
+    # kpi0, kpi1, kpi2, kpi3 = st.columns([0.5, 1.5, 1.7, 1])
+    kkpi0, kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns([0.2, 1, 1, 1, 1, 1])
 
-    # write info to KPIs:
+    # get KPI data and write to KPIs:
     with kpi1:
-         kpi1.metric(label='Total Calories Burned', value=total_cals)
+        total_workouts = int(df["Workout Timestamp"].count().sum())
+        kpi1.metric(label='Total Workouts', value=total_workouts)
+
     with kpi2:
-        kpi2.metric(label='Favorite Instructor', value=favorite_instructor)
-        st.image(hero_img, width=100)
+        total_cals = "{:,}".format(int(df['Calories Burned'].sum()))
+        kpi2.metric(label='Total Calories Burned', value=total_cals)
+
     with kpi3:
-        kpi3.metric(label='Total Workouts', value=total_workouts)
+        favorite_instructor = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
+            ascending=False).index.tolist()[0])
+        # get top instructor image:
+        hero_img = "./images/" + favorite_instructor + ".png"
+        kpi3.metric(label='Favorite Instructor', value=favorite_instructor)
+        st.image(hero_img, width=100)
+
+    with kpi4:
+        total_time = get_total_workout_time(df, 'Length (minutes)')
+        kpi4.metric(label='Total Workout Time', value=str("{:,}".format(total_time)) + ' hours')
+    with kpi5:
+        streak = longest_streak(df, 'workout: datetime')
+        kpi5.metric(label='Longest Consecutive Streak', value=str(streak) + ' days')
 
     st.markdown('---')
 
@@ -116,7 +109,7 @@ if uploaded_file is not None:
 
     with column_right:
         option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
-        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=800, h=600)
+        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=600, h=600)
         st.plotly_chart(fig2)
 
     st.markdown('---')
@@ -128,21 +121,21 @@ if uploaded_file is not None:
         hue1 = st.radio(
             "break down 'Time of Day' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=700, h=600)
+        figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600)
         st.plotly_chart(figc1)
 
     with c2:
         hue2 = st.radio(
             "break down 'Day of Week' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=700, h=600)
+        figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600)
         st.plotly_chart(figc2)
 
     with c3:
         hue3 = st.radio(
             "break down 'Month and Year' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=700, h=600)
+        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600)
         st.plotly_chart(figc3)
 
     st.markdown('---')
