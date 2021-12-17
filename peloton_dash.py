@@ -39,6 +39,8 @@ with st1:
 with st2:
     st.image('./images/instructions.png', width=700)
 st.markdown('---')
+
+
 ########################################################################################################################
 # KPIs:
 ########################################################################################################################
@@ -110,7 +112,7 @@ if uploaded_file is not None:
         hue3 = st.radio(
             "break down 'Month and Year' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600)
+        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=700, h=600)
         st.plotly_chart(figc3)
 
     st.markdown('---')
