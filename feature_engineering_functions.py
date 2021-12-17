@@ -21,6 +21,7 @@ def date_cleaner(df, date_col):
     # convert to day of week:
     df['new_datetime'] = pd.to_datetime(df['new_datetime'])
     cleaned_date_lst = df['new_datetime'].tolist()
+    cleaned_date_lst = [x.astype("M8") for x in cleaned_date_lst]
     df.drop(labels='new_datetime', axis=1, inplace=True)
     return cleaned_date_lst
 
