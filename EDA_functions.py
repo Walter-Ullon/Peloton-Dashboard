@@ -18,15 +18,14 @@ def histogram(df, x, y, func, w, h):
 
 
 # plots histogram of x and count(x). Aggregates based on func (sum, avg, etc.):
-def count_histogram(df, x, color, w, h):
+def count_histogram(df, x, color, w, h, array_l):
     fig = px.histogram(df, x=x, color=color, hover_data=df.columns)
     fig.update_layout(
         autosize=False,
         width=w,
         height=h,
-        xaxis={'category_orders':{'workout: day of week': ['Monday', 'Tuesday', 'Wedsnesday', 'Thursday', 'Friday',
-                                                               'Saturday', 'Sunday']}},
-        barmode='overlay')
+        xaxis=dict(categoryorder="array",
+                   categoryarray=array_l))
     return fig
 
 

@@ -98,21 +98,23 @@ if uploaded_file is not None:
         hue1 = st.radio(
             "break down 'Time of Day' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600)
+        array_tod = ['early morning', 'morning', 'early afternoon', 'evening', 'late night']
+        figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600, array_l=array_tod)
         st.plotly_chart(figc1)
 
     with c2:
         hue2 = st.radio(
             "break down 'Day of Week' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600)
+        array_dow = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600, array_l=array_dow)
         st.plotly_chart(figc2)
 
     with c3:
         hue3 = st.radio(
             "break down 'Month and Year' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600)
+        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600, array_l=[])
         st.plotly_chart(figc3)
 
     st.markdown('---')
