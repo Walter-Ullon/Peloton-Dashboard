@@ -51,102 +51,102 @@ if uploaded_file is not None:
 else:
     df = pd.read_csv("./data/my_workouts.csv")
 
-     # basic feature engineering:
-    df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
-    df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
-    df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
-    df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
-    df['workout: title'] = get_workout_type(df)
-    st.markdown('---')
+ # basic feature engineering:
+df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
+df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
+df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
+df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
+df['workout: title'] = get_workout_type(df)
+st.markdown('---')
 
-    # set the KPI columns:
-    # trick: use kpi0 to pad columns and align center...
-    # kpi0, kpi1, kpi2, kpi3 = st.columns([0.5, 1.5, 1.7, 1])
-    kkpi0, kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns([0.2, 1, 1, 1, 1, 1])
+# set the KPI columns:
+# trick: use kpi0 to pad columns and align center...
+# kpi0, kpi1, kpi2, kpi3 = st.columns([0.5, 1.5, 1.7, 1])
+kkpi0, kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns([0.2, 1, 1, 1, 1, 1])
 
-    # get KPI data and write to KPIs:
-    with kpi1:
-        total_workouts = int(df["Workout Timestamp"].count().sum())
-        kpi1.metric(label='Total Workouts', value=total_workouts)
+# get KPI data and write to KPIs:
+with kpi1:
+    total_workouts = int(df["Workout Timestamp"].count().sum())
+    kpi1.metric(label='Total Workouts', value=total_workouts)
 
-    with kpi2:
-        total_cals = "{:,}".format(int(df['Calories Burned'].sum()))
-        kpi2.metric(label='Total Calories Burned', value=total_cals)
+with kpi2:
+    total_cals = "{:,}".format(int(df['Calories Burned'].sum()))
+    kpi2.metric(label='Total Calories Burned', value=total_cals)
 
-    with kpi3:
-        favorite_instructor = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
-            ascending=False).index.tolist()[0])
-        # get top instructor image:
-        hero_img = "./images/" + favorite_instructor + ".png"
-        kpi3.metric(label='Favorite Instructor', value=favorite_instructor)
-        st.image(hero_img, width=100)
+with kpi3:
+    favorite_instructor = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
+        ascending=False).index.tolist()[0])
+    # get top instructor image:
+    hero_img = "./images/" + favorite_instructor + ".png"
+    kpi3.metric(label='Favorite Instructor', value=favorite_instructor)
+    st.image(hero_img, width=100)
 
-    with kpi4:
-        total_time = get_total_workout_time(df, 'Length (minutes)')
-        kpi4.metric(label='Total Workout Time', value=str("{:,}".format(total_time)) + ' hours')
+with kpi4:
+    total_time = get_total_workout_time(df, 'Length (minutes)')
+    kpi4.metric(label='Total Workout Time', value=str("{:,}".format(total_time)) + ' hours')
 
-    with kpi5:
-        streak = longest_streak(df, 'workout: datetime')
-        kpi5.metric(label='Longest Consecutive Streak', value=str(streak) + ' days')
+with kpi5:
+    streak = longest_streak(df, 'workout: datetime')
+    kpi5.metric(label='Longest Consecutive Streak', value=str(streak) + ' days')
 
-    st.markdown('---')
+st.markdown('---')
 
 
 ########################################################################################################################
 # Charts (middle):
 ########################################################################################################################
-    c1, c2, c3 = st.columns([1, 1, 1])
-    with c1:
-        hue1 = st.radio(
-            "break down 'Time of Day' by: ",
-            ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        array_tod = ['early morning', 'morning', 'early afternoon', 'evening', 'late night']
-        figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600, array_l=array_tod)
-        st.plotly_chart(figc1)
+c1, c2, c3 = st.columns([1, 1, 1])
+with c1:
+    hue1 = st.radio(
+        "break down 'Time of Day' by: ",
+        ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
+    array_tod = ['early morning', 'morning', 'early afternoon', 'evening', 'late night']
+    figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600, array_l=array_tod)
+    st.plotly_chart(figc1)
 
-    with c2:
-        hue2 = st.radio(
-            "break down 'Day of Week' by: ",
-            ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        array_dow = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600, array_l=array_dow)
-        st.plotly_chart(figc2)
+with c2:
+    hue2 = st.radio(
+        "break down 'Day of Week' by: ",
+        ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
+    array_dow = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600, array_l=array_dow)
+    st.plotly_chart(figc2)
 
-    with c3:
-        hue3 = st.radio(
-            "break down 'Month and Year' by: ",
-            ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        dates = month_of_year(df, 'Workout Timestamp')
-        array_dates = []
-        array_dates = [array_dates.append(x) for x in dates if x not in array_dates]
-        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600, array_l=array_dates)
-        st.plotly_chart(figc3)
+with c3:
+    hue3 = st.radio(
+        "break down 'Month and Year' by: ",
+        ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
+    dates = month_of_year(df, 'Workout Timestamp')
+    array_dates = []
+    array_dates = [array_dates.append(x) for x in dates if x not in array_dates]
+    figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600, array_l=array_dates)
+    st.plotly_chart(figc3)
 
-    st.markdown('---')
+st.markdown('---')
 
 ########################################################################################################################
 # Charts (bottom):
 ########################################################################################################################
-    # set initial charts columns:
-    column_left, column_middle, column_right = st.columns([1, 1, 1])
+# set initial charts columns:
+column_left, column_middle, column_right = st.columns([1, 1, 1])
 
-    # write to columns:
-    with column_left:
-        option = st.selectbox("Calories Burned vs. Instructor: ", ['avg', 'sum', 'count'], index=1)
-        fig = histogram(df, x="Instructor Name", y="Calories Burned", func=option, w=700, h=600)
-        st.plotly_chart(fig)
+# write to columns:
+with column_left:
+    option = st.selectbox("Calories Burned vs. Instructor: ", ['avg', 'sum', 'count'], index=1)
+    fig = histogram(df, x="Instructor Name", y="Calories Burned", func=option, w=700, h=600)
+    st.plotly_chart(fig)
 
-    with column_middle:
-        option = st.selectbox("Avg. Heartrate by Key Metric: ", ["Calories Burned", "Avg. Watts", "Total Output",
-                                                                  "Distance (mi)", "Avg. Speed (mph)",
-                                                                  "Avg. Cadence (RPM)",
-                                                                  "Avg. Resistance"], index=5)
-        fig_heat = heatmap(df, x="Avg. Heartrate", y=option, w=700, h=600)
-        st.plotly_chart(fig_heat)
+with column_middle:
+    option = st.selectbox("Avg. Heartrate by Key Metric: ", ["Calories Burned", "Avg. Watts", "Total Output",
+                                                              "Distance (mi)", "Avg. Speed (mph)",
+                                                              "Avg. Cadence (RPM)",
+                                                              "Avg. Resistance"], index=5)
+    fig_heat = heatmap(df, x="Avg. Heartrate", y=option, w=700, h=600)
+    st.plotly_chart(fig_heat)
 
-    with column_right:
-        option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
-        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=700, h=600)
-        st.plotly_chart(fig2)
+with column_right:
+    option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
+    fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=700, h=600)
+    st.plotly_chart(fig2)
 
-    st.markdown('---')
+st.markdown('---')
