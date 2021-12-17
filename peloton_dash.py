@@ -116,7 +116,7 @@ if uploaded_file is not None:
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
         dates = month_of_year(df, 'Workout Timestamp')
         array_dates = []
-        [array_dates.append(x) for x in dates if x not in res]
+        [array_dates.append(x) for x in dates if x not in array_dates]
         figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600, array_l=array_dates)
         st.plotly_chart(figc3)
 
