@@ -46,10 +46,10 @@ st.markdown('---')
 ########################################################################################################################
 # file upload:
 uploaded_file = st.file_uploader("Upload .csv")
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-else:
+if uploaded_file is None:
     df = pd.read_csv("./data/my_workouts.csv")
+else:
+    df = pd.read_csv(uploaded_file)
 
      # basic feature engineering:
     df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
