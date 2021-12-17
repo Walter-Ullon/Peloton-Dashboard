@@ -24,7 +24,7 @@ def count_histogram(df, x, color, w, h):
         autosize=False,
         width=w,
         height=h,
-        xaxis={'categoryarray':{}},
+        xaxis={'category_orders':{}},
         barmode='overlay')
     return fig
 
