@@ -80,6 +80,7 @@ if uploaded_file is not None:
     with kpi4:
         total_time = get_total_workout_time(df, 'Length (minutes)')
         kpi4.metric(label='Total Workout Time', value=str("{:,}".format(total_time)) + ' hours')
+
     with kpi5:
         streak = longest_streak(df, 'workout: datetime')
         kpi5.metric(label='Longest Consecutive Streak', value=str(streak) + ' days')
@@ -89,32 +90,6 @@ if uploaded_file is not None:
 
 ########################################################################################################################
 # Charts (middle):
-########################################################################################################################
-    # set initial charts columns:
-    column_left, column_middle, column_right = st.columns([1, 1, 1])
-
-    # write to columns:
-    with column_left:
-        option = st.selectbox("Calories Burned vs. Instructor: ", ['avg', 'sum', 'count'], index=1)
-        fig = histogram(df, x="Instructor Name", y="Calories Burned", func=option, w=700, h=600)
-        st.plotly_chart(fig)
-
-    with column_middle:
-        option = st.selectbox("Avg. Heartrate by Key Metric: ", ["Calories Burned", "Avg. Watts", "Total Output",
-                                                                  "Distance (mi)", "Avg. Speed (mph)",
-                                                                  "Avg. Cadence (RPM)",
-                                                                  "Avg. Resistance"], index=5)
-        fig_heat = heatmap(df, x="Avg. Heartrate", y=option, w=700, h=600)
-        st.plotly_chart(fig_heat)
-
-    with column_right:
-        option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
-        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=600, h=600)
-        st.plotly_chart(fig2)
-
-    st.markdown('---')
-########################################################################################################################
-# Charts (bottom):
 ########################################################################################################################
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
@@ -140,3 +115,29 @@ if uploaded_file is not None:
 
     st.markdown('---')
 
+########################################################################################################################
+# Charts (bottom):
+########################################################################################################################
+    # set initial charts columns:
+    column_left, column_middle, column_right = st.columns([1, 1, 1])
+
+    # write to columns:
+    with column_left:
+        option = st.selectbox("Calories Burned vs. Instructor: ", ['avg', 'sum', 'count'], index=1)
+        fig = histogram(df, x="Instructor Name", y="Calories Burned", func=option, w=700, h=600)
+        st.plotly_chart(fig)
+
+    with column_middle:
+        option = st.selectbox("Avg. Heartrate by Key Metric: ", ["Calories Burned", "Avg. Watts", "Total Output",
+                                                                  "Distance (mi)", "Avg. Speed (mph)",
+                                                                  "Avg. Cadence (RPM)",
+                                                                  "Avg. Resistance"], index=5)
+        fig_heat = heatmap(df, x="Avg. Heartrate", y=option, w=700, h=600)
+        st.plotly_chart(fig_heat)
+
+    with column_right:
+        option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
+        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=600, h=600)
+        st.plotly_chart(fig2)
+
+    st.markdown('---')
