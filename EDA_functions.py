@@ -24,7 +24,8 @@ def count_histogram(df, x, color, w, h):
         autosize=False,
         width=w,
         height=h,
-        xaxis={'category_orders':{}},
+        xaxis={'category_orders':{'workout: day of week': ['Monday', 'Tuesday', 'Wedsnesday', 'Thursday', 'Friday',
+                                                               'Saturday', 'Sunday']}},
         barmode='overlay')
     return fig
 
