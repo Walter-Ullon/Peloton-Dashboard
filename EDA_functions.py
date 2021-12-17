@@ -23,7 +23,8 @@ def count_histogram(df, x, color, w, h):
     fig.update_layout(
         autosize=False,
         width=w,
-        height=h)
+        height=h,
+        xaxis={'categoryorder':'total descending'})
     return fig
 
 
