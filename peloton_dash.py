@@ -112,7 +112,7 @@ if uploaded_file is not None:
         hue3 = st.radio(
             "break down 'Month and Year' by: ",
             ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
-        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=700, h=600)
+        figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600)
         st.plotly_chart(figc3)
 
     st.markdown('---')
@@ -139,7 +139,7 @@ if uploaded_file is not None:
 
     with column_right:
         option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
-        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=600, h=600)
+        fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=750, h=600)
         st.plotly_chart(fig2)
 
     st.markdown('---')
