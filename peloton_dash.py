@@ -30,7 +30,8 @@ with t4:
 st.markdown('---')
 st1, st2, st3 = st.columns([1, 2, 1])
 with st1:
-    st.markdown('#### Note: #### this app loads sample data unless you own workouts file is uploaded')
+    st.markdown('#### Note: ')
+    st.markdown('#### this app loads sample data unless you own workouts file is uploaded')
     st.markdown('#### To download your peloton workout data: ')
     st.markdown('1. Sing into your Peloton account.')
     st.markdown('2. Click on your picture/username on the top right.')
