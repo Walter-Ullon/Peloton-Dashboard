@@ -6,6 +6,7 @@ from pandas.api.types import CategoricalDtype
 # returns day of the week:
 def day_of_week(df, col):
     # remove last 6 characters:
+    df.sort_values(col).reset_index(drop=True)
     df['day_of_week'] = [x[:-6] for x in df[col]]
     # convert to day of week:
     df['day_of_week'] = pd.to_datetime(df['day_of_week']).dt.day_name()
