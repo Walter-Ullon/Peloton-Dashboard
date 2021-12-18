@@ -44,16 +44,23 @@ st.markdown('---')
 
 
 ########################################################################################################################
-# KPIs:
+# File Upload:
 ########################################################################################################################
 # file upload:
 # loads sample data upon booting the app.
 uploaded_file = st.file_uploader("Upload .csv")
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-else:
-    df = pd.read_csv("./data/my_workouts.csv")
+@st.cache()
+def load_workout_file(uploaded_file):
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_csv("./data/my_workouts.csv")
+    return df
 
+df = load_workout_file(uploaded_file)
+########################################################################################################################
+# KPIs:
+########################################################################################################################
  # basic feature engineering:
 df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
 df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
@@ -61,6 +68,7 @@ df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
 df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
 df['workout: title'] = get_workout_type(df)
 st.markdown('---')
+
 
 # set the KPI columns:
 # trick: use kpi0 to pad columns and align center...
