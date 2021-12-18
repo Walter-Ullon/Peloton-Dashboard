@@ -49,15 +49,11 @@ st.markdown('---')
 # file upload:
 # loads sample data upon booting the app.
 uploaded_file = st.file_uploader("Upload .csv")
-@st.cache()
-def load_workout_file(uploaded_file):
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_csv("./data/my_workouts.csv")
-    return df
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+else:
+    df = pd.read_csv("./data/my_workouts.csv")
 
-df = load_workout_file(uploaded_file)
 ########################################################################################################################
 # KPIs:
 ########################################################################################################################
