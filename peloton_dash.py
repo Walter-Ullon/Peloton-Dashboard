@@ -49,6 +49,7 @@ st.markdown('---')
 # file upload:
 # loads sample data upon booting the app.
 uploaded_file = st.file_uploader("Upload .csv")
+
 @st.cache(allow_output_mutation=True)
 def load_workout_file(uploaded_file):
     if uploaded_file is not None:
@@ -58,6 +59,7 @@ def load_workout_file(uploaded_file):
     return df
 
 df = load_workout_file(uploaded_file)
+
 ########################################################################################################################
 # KPIs:
 ########################################################################################################################
