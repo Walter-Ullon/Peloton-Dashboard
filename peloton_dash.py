@@ -3,12 +3,12 @@ import streamlit as st
 import plotly.express as px
 from feature_engineering_functions import *
 from EDA_functions import *
-import os
+from os import listdir
+from os.path import isfile, join
 
 ########################################################################################################################
 # Header
 ########################################################################################################################
-
 # set global page layout:
 st.set_page_config(layout="wide")
 
@@ -28,7 +28,7 @@ with t4:
     st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
 
 st.markdown('---')
-st1, st2, st3 = st.columns([1, 2, 1])
+st1, st2, st3 = st.columns([0.75, 1, 0.5])
 with st1:
     st.markdown('#### Note: ')
     st.markdown('This app loads sample data unless you own workouts file is uploaded.')
@@ -42,6 +42,14 @@ with st2:
     st.image('./images/instructions.png', width=700)
 st.markdown('---')
 
+with st3:
+    st.markdown('#### About the app...and your data: ')
+    st.markdown('I created this app primarily for the purpose of tracking my progress at a more granular level, and '
+                'additionally as a learning experience using new tech tools. I hope you find it as fun to use as I do.')
+    st.markdown('The data in the uploaded files is NEVER saved, snooped on, nor shared with anyone. '
+                'At any rate, please inspect the file and ensure it contains no "personally identifiable information".')
+    st.markdown('Thanks for using my dashboard, and if you have any questions or comments, please click on my LinkedIn '
+                'and drop me a message!')
 
 ########################################################################################################################
 # File Upload:
@@ -50,6 +58,8 @@ st.markdown('---')
 # loads sample data upon booting the app.
 uploaded_file = st.file_uploader("Upload .csv")
 
+
+# cache files to decrease latency:
 @st.cache(allow_output_mutation=True)
 def load_workout_file(uploaded_file):
     if uploaded_file is not None:
@@ -58,49 +68,83 @@ def load_workout_file(uploaded_file):
         df = pd.read_csv("./data/my_workouts.csv")
     return df
 
+
+# load:
 df = load_workout_file(uploaded_file)
+
 
 ########################################################################################################################
 # KPIs:
 ########################################################################################################################
- # basic feature engineering:
+# basic feature engineering:
+df.drop(df[df['Length (minutes)'] == 'None'].index, inplace=True)
 df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
 df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
 df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
 df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
 df['workout: title'] = get_workout_type(df)
+df['average output/minute'] = pd.to_numeric(df['Total Output'], errors='coerce').fillna(0.0001) / \
+                              pd.to_numeric(df['Length (minutes)'], errors='coerce').fillna(0.0001)
+df['calories per minute'] = pd.to_numeric(df['Calories Burned'], errors='coerce').fillna(0.0001) / \
+                              pd.to_numeric(df['Length (minutes)'], errors='coerce').fillna(0.0001)
+img_path = "./images/"
+instructor_lst = [f.split('.png')[0] for f in listdir(img_path) if isfile(join(img_path, f))]
+
+
 st.markdown('---')
 
 
 # set the KPI columns:
 # trick: use kpi0 to pad columns and align center...
 # kpi0, kpi1, kpi2, kpi3 = st.columns([0.5, 1.5, 1.7, 1])
-kkpi0, kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns([0.2, 1, 1, 1, 1, 1])
+kpi0, kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns([0.2, 1, 1, 1, 1, 1, 1])
 
 # get KPI data and write to KPIs:
 with kpi1:
     total_workouts = int(df["Workout Timestamp"].count().sum())
-    kpi1.metric(label='Total Workouts', value=total_workouts)
+    kpi1.metric(label='Total Workouts:', value=total_workouts)
 
 with kpi2:
     total_cals = "{:,}".format(int(df['Calories Burned'].sum()))
-    kpi2.metric(label='Total Calories Burned', value=total_cals)
+    kpi2.metric(label='Total Calories Burned:', value=total_cals)
 
 with kpi3:
+    # get favorite instructor name:
     favorite_instructor = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
         ascending=False).index.tolist()[0])
+    # get number of workouts:
+    num_workouts = str(df.groupby(["Instructor Name"])["Instructor Name"].count().sort_values(
+        ascending=False)[0])
+
     # get top instructor image:
     hero_img = "./images/" + favorite_instructor + ".png"
-    kpi3.metric(label='Favorite Instructor', value=favorite_instructor)
+    kpi3.metric(label='Favorite Instructor:', value=favorite_instructor)
     st.image(hero_img, width=100)
+    kpi3.metric(label='Number of workouts:', value=num_workouts)
 
 with kpi4:
-    total_time = get_total_workout_time(df, 'Length (minutes)')
-    kpi4.metric(label='Total Workout Time', value=str("{:,}".format(total_time)) + ' hours')
+    workout_title = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'Title')
+    instructor = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'Instructor Name')
+    output_metric = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'calories per minute')
+
+    if instructor not in instructor_lst:
+        kpi4.metric(label='Hardest Workout with:', value=instructor)
+        hardest_instructor = "./images/multi-ride.png"
+        st.image(hardest_instructor, width=132)
+    else:
+        kpi4.metric(label='Hardest Workout with:', value=instructor)
+        hardest_instructor = './images/' + instructor + '.png'
+        st.image(hardest_instructor, width=100)
+
+    kpi4.metric(label='Avg. calories/minute:', value=str("{:.1f}".format(output_metric)))
 
 with kpi5:
+    total_time = get_total_workout_time(df, 'Length (minutes)')
+    kpi5.metric(label='Total Workout Time:', value=str("{:,}".format(total_time)) + ' hours')
+
+with kpi6:
     streak = longest_streak(df, 'workout: datetime')
-    kpi5.metric(label='Longest Consecutive Streak', value=str(streak) + ' days')
+    kpi6.metric(label='Longest Consecutive Streak:', value=str(streak) + ' days')
 
 st.markdown('---')
 

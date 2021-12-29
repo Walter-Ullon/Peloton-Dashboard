@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 from pandas.api.types import CategoricalDtype
 
+
 # returns day of the week:
 def day_of_week(df, col):
     # remove last 6 characters:
@@ -27,7 +28,7 @@ def date_cleaner(df, date_col):
 
 # returns the discretized time of day:
 def time_of_day(df, col):
-    # get middle 5 chracters and strip colon, essentially turning it into military time.
+    # get middle 5 characters and strip colon, essentially turning it into military time.
     # converts to integer for comparison:
     df['time_of_day'] = [int(x[10:16].replace(':', '')) for x in df[col]]
     time_of_day_lst = []
@@ -36,11 +37,11 @@ def time_of_day(df, col):
     for tod in df['time_of_day']:
         if tod <= 600:
             time_of_day_lst.append('early morning')
-        elif tod > 600 and tod <= 1200:
+        elif 600 < tod <= 1200:
             time_of_day_lst.append('morning')
-        elif tod > 1200 and tod <= 1700:
+        elif 1200 < tod <= 1700:
             time_of_day_lst.append('early afternoon')
-        elif tod > 1700 and tod <= 2100:
+        elif 1700 < tod <= 2100:
             time_of_day_lst.append('evening')
         else:
             time_of_day_lst.append('late night')
@@ -90,3 +91,17 @@ def get_total_workout_time(df, time_col):
     minutes = [int(x) for x in df[time_col]]
     total = round(sum(minutes)/60, 2)
     return total
+
+
+# returns the desired value given a target metric:
+def hardest_workout_metrics(df, outputcol, durationcol, targetcol):
+    # convert to number and impute:
+    output = pd.to_numeric(df[outputcol], errors='coerce').fillna(0.0001)
+    duration = pd.to_numeric(df[durationcol], errors='coerce').fillna(0.0001)
+
+    # avg of output per minute:
+    a = output / duration
+
+    # get the target value for the target col:
+    t = df.loc[a.idxmax(), targetcol]
+    return t
