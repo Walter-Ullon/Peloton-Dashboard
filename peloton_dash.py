@@ -77,16 +77,13 @@ df = load_workout_file(uploaded_file)
 # KPIs:
 ########################################################################################################################
 # basic feature engineering:
-df.drop(df[df['Length (minutes)'] == 'None'].index, inplace=True)
 df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
 df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
 df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
 df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
 df['workout: title'] = get_workout_type(df)
-df['average output/minute'] = pd.to_numeric(df['Total Output'], errors='coerce').fillna(0.0001) / \
-                              pd.to_numeric(df['Length (minutes)'], errors='coerce').fillna(0.0001)
-df['calories per minute'] = pd.to_numeric(df['Calories Burned'], errors='coerce').fillna(0.0001) / \
-                              pd.to_numeric(df['Length (minutes)'], errors='coerce').fillna(0.0001)
+
+# get list of instructors:
 img_path = "./images/"
 instructor_lst = [f.split('.png')[0] for f in listdir(img_path) if isfile(join(img_path, f))]
 
@@ -123,16 +120,24 @@ with kpi3:
     kpi3.metric(label='Number of workouts:', value=num_workouts)
 
 with kpi4:
-    workout_title = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'Title')
-    instructor = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'Instructor Name')
-    output_metric = hardest_workout_metrics(df, 'Calories Burned', 'Length (minutes)', 'calories per minute')
+    # create a copy for 'hardest workout' calculations:
+    hwo_df = df.copy()
+    hwo_df = hwo_df.drop(df[df['Length (minutes)'] == 'None'].index)
+    hwo_df['average output/minute'] = pd.to_numeric(hwo_df['Total Output'], errors='coerce').fillna(0.0001) / \
+                                      pd.to_numeric(hwo_df['Length (minutes)'], errors='coerce').fillna(0.0001)
+    hwo_df['calories per minute'] = pd.to_numeric(hwo_df['Calories Burned'], errors='coerce').fillna(0.0001) / \
+                                    pd.to_numeric(hwo_df['Length (minutes)'], errors='coerce').fillna(0.0001)
+
+    workout_title = hardest_workout_metrics(hwo_df, 'Calories Burned', 'Length (minutes)', 'Title')
+    instructor = hardest_workout_metrics(hwo_df, 'Calories Burned', 'Length (minutes)', 'Instructor Name')
+    output_metric = hardest_workout_metrics(hwo_df, 'Calories Burned', 'Length (minutes)', 'calories per minute')
 
     if instructor not in instructor_lst:
-        kpi4.metric(label='Hardest Workout with:', value=instructor)
+        kpi4.metric(label='Hardest Workout: ' + workout_title, value=instructor)
         hardest_instructor = "./images/multi-ride.png"
         st.image(hardest_instructor, width=132)
     else:
-        kpi4.metric(label='Hardest Workout with:', value=instructor)
+        kpi4.metric(label='Hardest Workout: ' + workout_title, value=instructor)
         hardest_instructor = './images/' + instructor + '.png'
         st.image(hardest_instructor, width=100)
 
@@ -143,6 +148,7 @@ with kpi5:
     kpi5.metric(label='Total Workout Time:', value=str("{:,}".format(total_time)) + ' hours')
 
 with kpi6:
+    df.columns = df.columns.map(str)
     streak = longest_streak(df, 'workout: datetime')
     kpi6.metric(label='Longest Consecutive Streak:', value=str(streak) + ' days')
 

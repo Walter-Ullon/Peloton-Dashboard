@@ -18,7 +18,7 @@ def day_of_week(df, col):
 # returns date without trailing (-#):
 def date_cleaner(df, date_col):
     # remove last 6 characters:
-    df['new_datetime'] = [x[:-12] for x in df[date_col]]
+    df['new_datetime'] = [x[:10] for x in df[date_col]]
     # convert to day of week:
     df['new_datetime'] = pd.to_datetime(df['new_datetime'])
     cleaned_date_lst = df['new_datetime'].tolist()
