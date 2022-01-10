@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import networkx as nx
 import plotly.express as px
 import plotly.figure_factory as ff
 from pandas.api.types import CategoricalDtype
