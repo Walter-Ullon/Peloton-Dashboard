@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from pandas.api.types import CategoricalDtype
 
 
@@ -105,3 +105,32 @@ def hardest_workout_metrics(df, outputcol, durationcol, targetcol):
     # get the target value for the target col:
     t = df.loc[a.idxmax(), targetcol]
     return t
+
+
+# checks for consecutive dates:
+def is_consecutive(date1, date2):
+    return True if date1 + timedelta(days=1) == date2 else False
+
+
+# get longest workout streak (new version):
+def longest_streak2(df, date_col):
+    date_list = [x for x in df[date_col]]
+
+    date_list.sort()
+    res = {}
+    start_date = date_list[0]
+    cnt = 1
+    for idx, cur_date in enumerate(date_list[1:], start=1):
+        # print(idx, cur_date)
+        if is_consecutive(date_list[idx - 1], cur_date):
+            cnt += 1
+        else:
+            res[start_date] = cnt
+            start_date = cur_date
+            cnt = 1
+    else:
+        res[start_date] = cnt
+
+    max_key = max(res, key=res.get)
+    max_val = res.get(max_key)
+    return max_val

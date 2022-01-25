@@ -149,7 +149,7 @@ with kpi5:
 
 with kpi6:
     df.columns = df.columns.map(str)
-    streak = longest_streak(df, 'workout: datetime')
+    streak = longest_streak2(df, 'workout: datetime')
     kpi6.metric(label='Longest Consecutive Streak:', value=str(streak) + ' days')
 
 st.markdown('---')
