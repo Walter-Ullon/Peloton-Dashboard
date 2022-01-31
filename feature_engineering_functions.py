@@ -115,6 +115,7 @@ def is_consecutive(date1, date2):
 # get longest workout streak (new version):
 def longest_streak2(df, date_col):
     date_list = [x for x in df[date_col]]
+    date_list = list(set(date_list))
 
     date_list.sort()
     res = {}
