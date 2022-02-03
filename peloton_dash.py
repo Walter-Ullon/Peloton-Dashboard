@@ -5,6 +5,7 @@ from feature_engineering_functions import *
 from EDA_functions import *
 from os import listdir
 from os.path import isfile, join
+from api_functions import *
 
 ########################################################################################################################
 # Header
@@ -18,7 +19,7 @@ with h2:
     st.image("./images/Clap_V02.gif")
 
 # set divider for title:
-t1, t2, t3, t4 = st.columns([2, 3.5, 0.12, 0.5])
+t1, t2, t3, t4 = st.columns([2.2, 3.5, 0.12, 0.5])
 with t2:
     # set dashboard title:
     st.title('My Peloton Workouts Dashboard')
@@ -28,29 +29,34 @@ with t4:
     st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
 
 st.markdown('---')
-st1, st2, st3 = st.columns([0.75, 1, 0.5])
-with st1:
-    st.markdown('#### Note: ')
-    st.markdown('This app loads sample data unless you own workouts file is uploaded.')
-    st.markdown('#### To download your peloton workout data: ')
-    st.markdown('1. Sign in to your Peloton account.')
-    st.markdown('2. Click on your picture/username on the top right.')
-    st.markdown('3. Select **Workouts** from the menu.')
-    st.markdown('4. Click **DOWNLOAD WORKOUTS**.')
 
-with st2:
-    st.image('./images/instructions.png', width=700)
+########################################################################################################################
+# About section:
+########################################################################################################################
+with st.expander(" About this app and how to use it."):
+    st1, st2, st3 = st.columns([0.75, 1, 0.5])
+    with st1:
+        st.markdown('#### Note: ')
+        st.markdown('This app loads sample data unless you own workouts file is uploaded.')
+        st.markdown('#### To download your peloton workout data: ')
+        st.markdown('1. Sign in to your Peloton account.')
+        st.markdown('2. Click on your picture/username on the top right.')
+        st.markdown('3. Select **Workouts** from the menu.')
+        st.markdown('4. Click **DOWNLOAD WORKOUTS**.')
+
+    with st2:
+        st.image('./images/instructions.png', width=700)
+    st.markdown('---')
+
+    with st3:
+        st.markdown('#### About your data: ')
+        st.markdown('I created this app primarily for the purpose of tracking my progress at a high level, and '
+                    'additionally as a learning experience using new tech tools. I hope you find it as fun to use as I do.')
+        st.markdown('The data in the uploaded files is NEVER saved, snooped on, nor shared with anyone. '
+                    'At any rate, please inspect the file and ensure it contains no "personally identifiable information".')
+        st.markdown('Thanks for using my dashboard, and if you have any questions or comments, please click on my LinkedIn '
+                    'and drop me a message!')
 st.markdown('---')
-
-with st3:
-    st.markdown('#### About the app...and your data: ')
-    st.markdown('I created this app primarily for the purpose of tracking my progress at a more granular level, and '
-                'additionally as a learning experience using new tech tools. I hope you find it as fun to use as I do.')
-    st.markdown('The data in the uploaded files is NEVER saved, snooped on, nor shared with anyone. '
-                'At any rate, please inspect the file and ensure it contains no "personally identifiable information".')
-    st.markdown('Thanks for using my dashboard, and if you have any questions or comments, please click on my LinkedIn '
-                'and drop me a message!')
-
 ########################################################################################################################
 # File Upload:
 ########################################################################################################################
@@ -60,7 +66,7 @@ uploaded_file = st.file_uploader("Upload .csv")
 
 
 # cache files to decrease latency:
-@st.cache(allow_output_mutation=True)
+@st.experimental_memo()
 def load_workout_file(uploaded_file):
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
@@ -116,7 +122,7 @@ with kpi3:
     # get top instructor image:
     hero_img = "./images/" + favorite_instructor + ".png"
     kpi3.metric(label='Favorite Instructor:', value=favorite_instructor)
-    st.image(hero_img, width=100)
+    st.image(hero_img, width=140)
     kpi3.metric(label='Number of workouts:', value=num_workouts)
 
 with kpi4:
@@ -139,7 +145,7 @@ with kpi4:
     else:
         kpi4.metric(label='Hardest Workout: ' + workout_title, value=instructor)
         hardest_instructor = './images/' + instructor + '.png'
-        st.image(hardest_instructor, width=100)
+        st.image(hardest_instructor, width=140)
 
     kpi4.metric(label='Avg. calories/minute:', value=str("{:.1f}".format(output_metric)))
 
@@ -213,3 +219,20 @@ with column_right:
     st.plotly_chart(fig2)
 
 st.markdown('---')
+
+########################################################################################################################
+# Instructor section:
+########################################################################################################################
+ins1, ins2, ins3, ins4 = st.columns([1, 1, 1, 1])
+
+# pull instructor data:
+instructors_df = get_instructors_data()
+
+with ins1:
+    instructor = st.selectbox('Please Select your Peloton Hero: ', instructors_df['name'], index=31)
+    image_url = instructors_df.loc[instructors_df['name'] == instructor, 'about_image_url'].values[0]
+    instructor_quote = instructors_df.loc[instructors_df['name'] == instructor, 'quote'].values[0].replace('“', '').replace('”', '')
+    st.image(image_url, width=200)
+    st.markdown('"' + instructor_quote + '"')
+
+

@@ -1,5 +1,6 @@
 import pandas as pd
 import requests
+import streamlit as st
 
 
 # initiate session:
@@ -9,6 +10,7 @@ s.post('https://api.onepeloton.com/auth/login', json=payload)
 
 
 # get a dataframe of all instructors plus their quotes, hero pictures, etc:
+@st.experimental_memo()
 def get_instructors_data():
     instructors = s.get('https://api.onepeloton.com/api/instructor?limit=100').json()
     instructors_df = pd.DataFrame.from_dict(instructors['data'])
@@ -93,7 +95,8 @@ def get_all_instructors_workouts(path_to_dir):
         wo_df.to_csv(file_name)
 
 
-# get device type mappings
+# get device type mappings:
+@st.experimental_memo()
 def get_device_type_mappings():
     device_types = s.get('https://api.onepeloton.com/api/ride/metadata_mappings').json()['device_type_display_names']
     device_types_df = pd.DataFrame.from_dict(device_types)
