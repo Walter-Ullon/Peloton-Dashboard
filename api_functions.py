@@ -43,19 +43,22 @@ def get_class_data(dir_path):
 # takes a df of workouts and looks for the name of the instructors for said workouts:
 def get_class_instructor_name(workouts_df):
     instructor_names = []
-    for workout_id in workouts_df['id']:
-        workout_data = s.get('https://api.onepeloton.com/api/workout/' + str(workout_id)).json()
-        try:
-            instructor_id = workout_data['ride']['instructor_id']
-            if instructor_id is not None:
-                instructor_name = s.get('https://api.onepeloton.com/api/instructor/' + instructor_id).json()['name']
+    try:
+        for workout_id in workouts_df['id']:
+            workout_data = s.get('https://api.onepeloton.com/api/workout/' + str(workout_id)).json()
+            try:
+                instructor_id = workout_data['ride']['instructor_id']
+                if instructor_id is not None:
+                    instructor_name = s.get('https://api.onepeloton.com/api/instructor/' + instructor_id).json()['name']
+                    instructor_names.append(instructor_name)
+                else:
+                    instructor_name = workout_data['name']
+                    instructor_names.append(instructor_name)
+            except KeyError as e:
+                instructor_name = workout_data['workout_type']
                 instructor_names.append(instructor_name)
-            else:
-                instructor_name = workout_data['name']
-                instructor_names.append(instructor_name)
-        except KeyError as e:
-            instructor_name = workout_data['workout_type']
-            instructor_names.append(instructor_name)
+    except KeyError as e:
+        pass
 
     workouts_df['instructor_name'] = instructor_names
     return workouts_df
@@ -63,7 +66,6 @@ def get_class_instructor_name(workouts_df):
 
 # return all publicly available workouts for an instructor:
 def get_instructor_workouts(user_id):
-    # for user_id in instructors_df['user_id']:
     wo_url = 'https://api.onepeloton.com/api/user/' + str(user_id) + '/workouts?limit=100'
     wo_df = pd.DataFrame()
     try:
@@ -78,6 +80,17 @@ def get_instructor_workouts(user_id):
     wo_df = get_class_instructor_name(wo_df)
 
     return wo_df
+
+
+# pull workout data for all peloton instructors:
+def get_all_instructors_workouts(path_to_dir):
+    instructors_df = get_instructors_data()
+
+    for user_id in instructors_df['user_id']:
+        wo_df = get_instructor_workouts(user_id)
+        instructor_name = (instructors_df.loc[instructors_df['user_id'] == user_id, 'name'].values[0]).replace(' ', '_')
+        file_name = path_to_dir + '/' + instructor_name + '.csv'
+        wo_df.to_csv(file_name)
 
 
 # get device type mappings
