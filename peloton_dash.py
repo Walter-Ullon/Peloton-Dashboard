@@ -11,7 +11,16 @@ from api_functions import *
 # Header
 ########################################################################################################################
 # set global page layout:
-st.set_page_config(layout="wide")
+st.set_page_config(page_title='Peloton Workouts Dashboard', page_icon="./images/pelo_black2.png", layout="wide")
+
+# hide footer:
+hide_menu_style = """
+        <style>
+        # MainMenu {visibility: hidden; }
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_menu_style, unsafe_allow_html=True)
 
 # set divider for peloton logo:
 h1, h2, h3 = st.columns([6,1,6])

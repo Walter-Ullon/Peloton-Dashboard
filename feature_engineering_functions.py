@@ -135,3 +135,5 @@ def longest_streak2(df, date_col):
     max_key = max(res, key=res.get)
     max_val = res.get(max_key)
     return max_val
+
+
