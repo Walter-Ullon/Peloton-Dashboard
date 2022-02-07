@@ -1,8 +1,8 @@
 import pandas as pd
 import requests
 import streamlit as st
-import os
 from datetime import datetime
+from feature_engineering_functions import *
 
 # initiate session:
 s = requests.Session()
@@ -114,47 +114,102 @@ def get_device_type_mappings():
     return device_types_df
 
 
-# concatenate all class dataframes into a single file and convert dates, get instructor names, etc...
-def preprocess_classes_data(dir_path):
-    # create master file to hold all data:
-    master_class_df = pd.DataFrame()
-
+# preprocess class data:
+def preprocess_classes_data(diff_df):
     # get list of instructors and their profile data:
-    instructors = pd.read_csv('./data/complete_instructors.csv')
+    instructors = pd.read_csv('./data/instructor_data/complete_instructors_list.csv')
 
-    # scan directory and start appending files:
-    for filename in os.scandir(dir_path):
-        try:
-            # check for to see if file is .csv:
-            if filename.is_file() and '.csv' in str(filename):
-                temp_df = pd.read_csv(filename, low_memory=False)
+    # convert unix time to datetime:
+    diff_df['original_airtime'] = unix_date_converter(diff_df['original_air_time'])
+    diff_df['instructor_name'] = pd.Series()
+    
+    # convert to day of week:
+    diff_df['workout: day of week'] = pd.to_datetime(diff_df['original_airtime']).dt.day_name()
+    # get time of day:
+    diff_df['workout: time of day'] = time_of_day(diff_df, 'original_airtime')
+    # get month and year i.e 'September 21'
+    diff_df['workout: month and year'] = month_of_year(diff_df, 'original_airtime')
+    # get workout title:
+    diff_df['workout: title'] = diff_df['title']
+    
+    # get instructor name from ID:
+    try:
+        for i, instructor_id in enumerate(diff_df['instructor_id']):
+            try:
+                instructor_name = instructors.loc[instructors['id'] == instructor_id, 'name'].values[0]
+                diff_df['instructor_name'][i] = instructor_name
+            except (IndexError, KeyError) as e:
+                # if ID not found in instructors file, call the API, append the new record to the instructors
+                # file and save:
+                instructor_dict = s.get('https://api.onepeloton.com/api/instructor/' + str(instructor_id)).json()
+                new_instructor_df = pd.DataFrame([instructor_dict])
+                instructor_name = instructor_dict['name']
+                instructors = pd.concat([instructors, new_instructor_df])
+                diff_df['instructor_name'][i] = instructor_name
+    except (IndexError, KeyError) as e:
+        pass
 
-                # convert unix time to datetime:
-                temp_df['original_airtime'] = unix_date_converter(temp_df['original_air_time'])
-                temp_df['instructor_name'] = pd.Series()
+    # save any new records to the main instructors file:
+    instructors.to_csv('./data/instructor_data/complete_instructors_list.csv', index=None)
+    
+    return diff_df
 
-                # get instructor name from ID:
-                try:
-                    for i, instructor_id in enumerate(temp_df['instructor_id']):
-                        try:
-                            instructor_name = instructors.loc[instructors['id'] == instructor_id, 'name'].values[0]
-                            temp_df['instructor_name'][i] = instructor_name
-                        except (IndexError, KeyError) as e:
-                            # if ID not found in instructors file, call the API, append the new record to the instructors
-                            # file and save:
-                            instructor_dict = s.get(
-                                'https://api.onepeloton.com/api/instructor/' + str(instructor_id)).json()
-                            new_instructor_df = pd.DataFrame([instructor_dict])
-                            instructor_name = instructor_dict['name']
-                            instructors = pd.concat([instructors, new_instructor_df])
-                            temp_df['instructor_name'][i] = instructor_name
-                except (IndexError, KeyError) as e:
-                    pass
-        except (IndexError, KeyError) as e:
-            pass
 
-        # collect all of the class dataframes:
-        master_class_df = pd.concat([master_class_df, temp_df])
-        # save any new records to the main instructors file:
-        instructors.to_csv('./data/complete_instructors.csv')
-    return master_class_df
+# find the latest classes and add them to the master file with all classes:
+def get_class_diff(master_df_file):
+    # get a list of all workout categories:
+    wo_categories = s.get('https://api.onepeloton.com/api/v2/ride/archived?browse_category=cycling&page=0').json()
+    categories_df = pd.DataFrame.from_dict(wo_categories['browse_categories'])
+    
+    # read master file with saved classes up to date:
+    master_df = pd.read_csv(master_df_file, low_memory=False)
+    master_slug_ids_set = set(master_df['id'])
+    
+    # set empty df to contain the difference in records (new classes not in master file):
+    diff_df = pd.DataFrame()
+    
+    # get the top url for all rides:
+    rides_url = 'https://api.onepeloton.com/api/v2/ride/archived?browse_category&limit=100'
+
+    # get the total number of class pages for the category:
+    rides_dict = s.get(rides_url).json()
+    page_count = rides_dict['page_count']
+
+    # iterate through every page in until a class id in the master file is found:
+    try:
+        for page_num in range(10):
+            # get url for category and specific page number:
+            page_url = rides_url + '&page=' + str(page_num)
+
+            #all classes in a given page:
+            page_classes_df = pd.DataFrame.from_dict(s.get(page_url).json()['data'])
+            for i, class_id in enumerate(page_classes_df['id']):
+                if class_id not in master_slug_ids_set:
+                    diff_df = pd.concat([diff_df, page_classes_df.iloc[[i]]])
+                else:
+                    # print(f'class_id found in file: {class_id}')
+                    break
+    except KeyError as e:
+        pass
+
+    # check to see if there is any difference in the data:
+    if len(diff_df) != 0:
+        diff_df = diff_df.reset_index(drop=True)
+        
+        # preprocess diff_df before appending to master file:
+        preprocessed_diff_df = preprocess_classes_data(diff_df)
+        # return an updated master file:
+        updated_master_df = pd.concat([master_df, preprocessed_diff_df])
+        updated_master_df.drop_duplicates(subset=['id'], inplace=True)
+        updated_master_df.sort_values(by='original_airtime', ascending=False, inplace=True)
+
+        # check for number of records after:
+        # total_records_master = len(updated_master_df)
+        # total_rides_available = rides_dict['total']
+        # print(f"total records in master file: {total_records_master}")
+        # print(f"total rides available: {total_rides_available}")
+    else:
+        updated_master_df = master_df
+        pass
+    
+    return updated_master_df

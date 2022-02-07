@@ -92,11 +92,11 @@ df = load_workout_file(uploaded_file)
 # KPIs:
 ########################################################################################################################
 # basic feature engineering:
-df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp')
+df['workout: datetime'] = date_cleaner(df, 'Workout Timestamp', 10)
 df['workout: day of week'] = day_of_week(df, 'Workout Timestamp')
 df['workout: time of day'] = time_of_day(df, 'Workout Timestamp')
 df['workout: month and year'] = month_of_year(df, 'Workout Timestamp')
-df['workout: title'] = get_workout_type(df)
+df['workout: title'] = df['Title']
 
 # get list of instructors:
 img_path = "./images/"

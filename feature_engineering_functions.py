@@ -16,9 +16,9 @@ def day_of_week(df, col):
 
 
 # returns date without trailing (-#):
-def date_cleaner(df, date_col):
+def date_cleaner(df, date_col, remove_last_n_chars):
     # remove last 6 characters:
-    df['new_datetime'] = [x[:10] for x in df[date_col]]
+    df['new_datetime'] = [x[:remove_last_n_chars] for x in df[date_col]]
     # convert to day of week:
     df['new_datetime'] = pd.to_datetime(df['new_datetime'])
     cleaned_date_lst = df['new_datetime'].tolist()
@@ -30,7 +30,7 @@ def date_cleaner(df, date_col):
 def time_of_day(df, col):
     # get middle 5 characters and strip colon, essentially turning it into military time.
     # converts to integer for comparison:
-    df['time_of_day'] = [int(x[10:16].replace(':', '')) for x in df[col]]
+    df['time_of_day'] = [int(str(x).split(' ')[1].replace(':', '')) for x in df[col]]
     time_of_day_lst = []
     
     # discretize hours
@@ -52,7 +52,7 @@ def time_of_day(df, col):
 
 # returns the month of the year i.e. October-21:
 def month_of_year(df, col):
-    df['month_of_year'] = [x[:-12] for x in df[col]]
+    df['month_of_year'] = [str(x).split(' ')[0] for x in df[col]]
     dates = pd.to_datetime(df['month_of_year'])
     df['month_of_year'] = dates.apply(lambda x: x.strftime('%B-%y'))
     month_of_year_lst = df['month_of_year'].tolist()
@@ -62,6 +62,7 @@ def month_of_year(df, col):
 
 
 # get ride type:
+# TODO: refactor this one to account for titles that dont conform to the pattern '30 min XXXXX'
 def get_workout_type(df):
     workout_type_lst = [x.split(' ', 2)[2] for x in df['Title']]
     return workout_type_lst
