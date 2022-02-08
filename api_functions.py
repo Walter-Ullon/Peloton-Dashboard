@@ -51,7 +51,8 @@ def get_class_data(dir_path):
 
 
 # takes a df of instructor taken workouts and looks for the name of the instructors who conducted for said workouts:
-def get_class_instructor_name(workouts_df):
+# TODO: add try except to replace the api call with file read for instructors
+def get_class_instructor_name(workouts_df, instructors_df):
     instructor_names = []
     try:
         for workout_id in workouts_df['id']:
@@ -59,8 +60,12 @@ def get_class_instructor_name(workouts_df):
             try:
                 instructor_id = workout_data['ride']['instructor_id']
                 if instructor_id is not None:
-                    instructor_name = s.get('https://api.onepeloton.com/api/instructor/' + instructor_id).json()['name']
-                    instructor_names.append(instructor_name)
+                    try:
+                        instructor_name = instructors_df.loc[instructors_df['id'] == instructor_id, 'name'].values[0]
+                        instructor_names.append(instructor_name)
+                    except (IndexError, KeyError) as e:    
+                        instructor_name = s.get('https://api.onepeloton.com/api/instructor/' + instructor_id).json()['name']
+                        instructor_names.append(instructor_name)
                 else:
                     instructor_name = workout_data['name']
                     instructor_names.append(instructor_name)
@@ -156,13 +161,13 @@ def preprocess_classes_data(diff_df):
 
 
 # find the latest classes and add them to the master file with all classes:
-def get_class_diff(master_df_file):
+def get_class_diff():
     # get a list of all workout categories:
     wo_categories = s.get('https://api.onepeloton.com/api/v2/ride/archived?browse_category=cycling&page=0').json()
     categories_df = pd.DataFrame.from_dict(wo_categories['browse_categories'])
     
     # read master file with saved classes up to date:
-    master_df = pd.read_csv(master_df_file, low_memory=False)
+    master_df = pd.read_csv('./data/class_data/master_classes.csv', low_memory=False)
     master_slug_ids_set = set(master_df['id'])
     
     # set empty df to contain the difference in records (new classes not in master file):
@@ -176,8 +181,9 @@ def get_class_diff(master_df_file):
     page_count = rides_dict['page_count']
 
     # iterate through every page in until a class id in the master file is found:
+    found = False
     try:
-        for page_num in range(10):
+        for page_num in range(page_count + 1):
             # get url for category and specific page number:
             page_url = rides_url + '&page=' + str(page_num)
 
@@ -187,8 +193,11 @@ def get_class_diff(master_df_file):
                 if class_id not in master_slug_ids_set:
                     diff_df = pd.concat([diff_df, page_classes_df.iloc[[i]]])
                 else:
-                    # print(f'class_id found in file: {class_id}')
+                    print(f'class_id found in file: {class_id}')
+                    found = True
                     break
+            if found:
+                break
     except KeyError as e:
         pass
 
@@ -212,4 +221,89 @@ def get_class_diff(master_df_file):
         updated_master_df = master_df
         pass
     
-    return updated_master_df
+    updated_master_df.to_csv('./data/class_data/master_classes.csv', index=None)
+
+
+# looks for differences between instructor taken classes available online, versus the ones on file:
+def get_instructor_workouts_diff(user_id, instructors_df):
+    # get instructors list from API:
+    instructors = instructors_df
+    
+    # get instructor name and prepare for file read:
+    instructor_name = str(instructors.loc[instructors['user_id'] == user_id, 'name'].values[0]).replace(' ', '_')
+    print(f"instructor name: {instructor_name}")
+    
+    # get page of workouts for specific instructors:
+    workout_url = 'https://api.onepeloton.com/api/user/' + str(user_id) + '/workouts?limit=100'
+    
+    try:
+        # get file of already saved workouts for specific instructor:
+        instructor_workouts = pd.read_csv('./data/instructor_data/instructor_workouts/' + instructor_name + '.csv')
+        
+        try:
+            # class ids:
+            class_ids_lst = set(instructor_workouts['id'])
+            
+            # get the total number of class pages for instructor workouts:
+            workout_dict = s.get(workout_url).json()
+            page_count = workout_dict['page_count']
+
+            # set empty df to all updates:
+            diff_df = pd.DataFrame()
+            
+            # check to see if class id exists in file, if found, break:
+            found = False
+            for page_num in range(page_count + 1):
+                # get page URL:
+                page_url = workout_url + '&page=' + str(page_num)
+                page_classes_df = pd.DataFrame.from_dict(s.get(page_url).json()['data'])
+                
+                # check every ID in the class page, and see if it exists alredy in file
+                for i, class_id in enumerate(page_classes_df['id']):
+                    if class_id not in class_ids_lst:
+                        diff_df = pd.concat([diff_df, page_classes_df.iloc[[i]]])
+                    else:
+                        found = True
+                        # print(f'class_id found in file: {class_id}')
+                        break
+                if found:
+                    break
+            
+            # get instructor names for each class taken in the diff dataframe:
+            diff_df = get_class_instructor_name(diff_df, instructors)
+
+            # convert to timestamp:
+            diff_df['workout_timestamp'] = unix_date_converter(list(diff_df['created_at']))
+            # convert to day of week:
+            diff_df['workout: day of week'] = pd.to_datetime(diff_df['workout_timestamp']).dt.day_name()
+            # get time of day:
+            diff_df['workout: time of day'] = time_of_day(diff_df, 'workout_timestamp')
+            # get month and year i.e 'September 21'
+            diff_df['workout: month and year'] = month_of_year(diff_df, 'workout_timestamp')
+            
+            # append diff df to file already on record:
+            updated_workouts_df = pd.concat([instructor_workouts, diff_df])
+            updated_workouts_df.drop_duplicates(subset=['id'], inplace=True)
+            
+            # save the updated df to file:
+            updated_workouts_df.to_csv('./data/instructor_data/instructor_workouts/' + instructor_name + '.csv', index=None)
+            
+            # return updated_workouts_df
+
+        except KeyError as e:
+            pass
+        
+    except FileNotFoundError as e:
+        print("File not Found")
+        # TODO: if file is not found, look for instructor classes (if publicly available)
+        
+        
+# updates all instructor taken workouts:
+def update_instructor_workouts():
+    # get list of instructors from API
+    instructors_df = get_instructors_data()
+    
+    # loop through every user_id and update the workout data:
+    for user_id in instructors_df['user_id']:
+        get_instructor_workouts_diff(user_id, instructors_df)
+        

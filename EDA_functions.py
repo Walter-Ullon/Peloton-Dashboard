@@ -8,7 +8,7 @@ from PIL import Image
 
 # plots histogram of x and y. Aggregates based on func (sum, avg, etc.):
 def histogram(df, x, y, func, w, h):
-    fig = px.histogram(df, x=x, y=y, histfunc=func, hover_data=df.columns).update_xaxes(categoryorder="total descending")
+    fig = px.histogram(df, x=x, y=y, histfunc=func, hover_data=df.columns)
     fig.update_layout(
         autosize=False,
         width=w,
