@@ -6,38 +6,11 @@ from EDA_functions import *
 from os import listdir
 from os.path import isfile, join
 from api_functions import *
+from humanfriendly import format_timespan
 
-########################################################################################################################
-# Header
-########################################################################################################################
+
 # set global page layout:
 st.set_page_config(page_title='Peloton Workouts Dashboard', page_icon="./images/pelo_black2.png", layout="wide")
-
-# hide footer:
-hide_menu_style = """
-        <style>
-        # MainMenu {visibility: hidden; }
-        footer {visibility: hidden;}
-        </style>
-        """
-st.markdown(hide_menu_style, unsafe_allow_html=True)
-
-# set divider for peloton logo:
-h1, h2, h3 = st.columns([6,1,6])
-with h2:
-    st.image("./images/Clap_V02.gif")
-
-# set divider for title:
-t1, t2, t3, t4 = st.columns([2.2, 3.5, 0.12, 0.5])
-with t2:
-    # set dashboard title:
-    st.title('My Peloton Workouts Dashboard')
-with t3:
-    st.image('./images/LI-In-Bug.png', width=30)
-with t4:
-    st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
-
-st.markdown('---')
 
 ########################################################################################################################
 # About section:
@@ -65,7 +38,36 @@ with st.expander(" About this app and how to use it."):
                     'At any rate, please inspect the file and ensure it contains no "personally identifiable information".')
         st.markdown('Thanks for using my dashboard, and if you have any questions or comments, please click on my LinkedIn '
                     'and drop me a message!')
+
+########################################################################################################################
+# Header
+########################################################################################################################
+# hide footer:
+hide_menu_style = """
+        <style>
+        # MainMenu {visibility: hidden; }
+        footer {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_menu_style, unsafe_allow_html=True)
+
+# set divider for peloton logo:
+h1, h2, h3 = st.columns([6,1,6])
+with h2:
+    st.image("./images/Clap_V02.gif")
+
+# set divider for title:
+t1, t2, t3, t4 = st.columns([2.4, 3.5, 0.12, 0.5])
+with t2:
+    # set dashboard title:
+    st.title('Peloton Workouts Dashboard')
+with t3:
+    st.image('./images/LI-In-Bug.png', width=30)
+with t4:
+    st.markdown("###### By [Walter Ullon](https://www.linkedin.com/in/walter-ullon-459220133/)")
+
 st.markdown('---')
+
 ########################################################################################################################
 # File Upload:
 ########################################################################################################################
@@ -86,7 +88,6 @@ def load_workout_file(uploaded_file):
 
 # load:
 df = load_workout_file(uploaded_file)
-
 
 ########################################################################################################################
 # KPIs:
@@ -179,7 +180,7 @@ with c1:
         "break down 'Time of Day' by: ",
         ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
     array_tod = ['early morning', 'morning', 'early afternoon', 'evening', 'late night']
-    figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=600, h=600, array_l=array_tod)
+    figc1 = count_histogram(df, x='workout: time of day', color=hue1, w=700, h=600, array_l=array_tod)
     st.plotly_chart(figc1)
 
 with c2:
@@ -187,7 +188,7 @@ with c2:
         "break down 'Day of Week' by: ",
         ('Type', 'Fitness Discipline', 'Live/On-Demand'), index=0)
     array_dow = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=600, h=600, array_l=array_dow)
+    figc2 = count_histogram(df, x='workout: day of week', color=hue2, w=700, h=600, array_l=array_dow)
     st.plotly_chart(figc2)
 
 with c3:
@@ -197,7 +198,7 @@ with c3:
     dates = month_of_year(df, 'Workout Timestamp')
     array_dates = []
     array_dates = [array_dates.append(x) for x in dates if x not in array_dates]
-    figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=600, h=600, array_l=array_dates)
+    figc3 = count_histogram(df, x='workout: month and year', color=hue3, w=700, h=600, array_l=array_dates)
     st.plotly_chart(figc3)
 
 st.markdown('---')
@@ -212,6 +213,7 @@ column_left, column_middle, column_right = st.columns([1, 1, 1])
 with column_left:
     option = st.selectbox("Calories Burned vs. Instructor: ", ['avg', 'sum', 'count'], index=1)
     fig = histogram(df, x="Instructor Name", y="Calories Burned", func=option, w=700, h=600)
+    fig.update_xaxes(tickangle=45)
     st.plotly_chart(fig)
 
 with column_middle:
@@ -225,23 +227,89 @@ with column_middle:
 with column_right:
     option = st.selectbox("Calories Burned vs. Workout Title: ", ['avg', 'sum', 'count'], index=1)
     fig2 = histogram(df, x='workout: title', y="Calories Burned", func=option, w=700, h=600)
+    fig2.update_xaxes(tickangle=45)
     st.plotly_chart(fig2)
 
 st.markdown('---')
 
+
 ########################################################################################################################
 # Instructor section:
 ########################################################################################################################
-ins1, ins2, ins3, ins4 = st.columns([1, 1, 1, 1])
+@st.experimental_singleton()
+def load_class_data(file):
+    if file is not None:
+        classes_df = pd.read_csv(file)
+        classes_df = classes_df.rename(columns={'difficulty_rating_avg': 'average difficulty rating',
+                                                'fitness_discipline_display_name': 'fitness discipline',
+                                                'difficulty_rating_count': 'difficulty rating count',
+                                                'original_air_time': 'premiere',
+                                                'overall_rating_avg': 'overall rating average',
+                                                'overall_rating_count': 'overall rating count',
+                                                'total_workouts': 'total user workouts'})
+        classes_df['duration'] = [format_timespan(x) for x in sorted(classes_df['duration'])]
+        classes_df['premiere'] = [x.split(' ')[0] for x in classes_df['premiere']]
+        classes_df['average difficulty rating'] = classes_df['average difficulty rating'].apply(lambda x: round(x, 2))
+        classes_df['overall rating average'] = (classes_df['overall rating average'] * 100).apply(lambda x: round(x, 2))
+
+    return classes_df
+
+
+# load and preprocess class data:
+classes_df = load_class_data('./data/class_data/master_classes.csv')
+
+ins1, ins2, ins3, ins4 = st.columns([0.7, 1, 1, 1])
 
 # pull instructor data:
 instructors_df = get_instructors_data()
 
+# plot data:
 with ins1:
     instructor = st.selectbox('Please Select your Peloton Hero: ', instructors_df['name'], index=31)
     image_url = instructors_df.loc[instructors_df['name'] == instructor, 'about_image_url'].values[0]
     instructor_quote = instructors_df.loc[instructors_df['name'] == instructor, 'quote'].values[0].replace('“', '').replace('”', '')
-    st.image(image_url, width=200)
+    st.image(image_url, width=300)
     st.markdown('"' + instructor_quote + '"')
+    
+with ins2:
+    hero_df = classes_df[classes_df['instructor_name'] == instructor]
+    diff_array = sorted(list(hero_df['duration']), reverse=True)
+    difficultyfig = count_histogram(hero_df, 'fitness discipline', 'duration', 650, 600, diff_array)
+    difficultyfig.update_layout(title_text='Count of Classes Instructed by Discipline')
+    st.plotly_chart(difficultyfig)
 
+with ins3:
+    scatterfig = px.scatter(hero_df,
+                            x='average difficulty rating',
+                            y='difficulty rating count',
+                            size='total user workouts',
+                            marginal_x='box',
+                            color='fitness discipline',
+                            hover_data=['title', 'premiere', 'average difficulty rating', 'difficulty rating count',
+                                        'overall rating average', 'overall rating count', 'total user workouts'])
+    scatterfig.update_layout(
+        title_text='Average Difficulty Rating of Classes Instructed',
+        autosize=False,
+        width=650,
+        height=600)
+    scatterfig.update_xaxes(
+        tickvals=np.arange(0, 11))
+    st.plotly_chart(scatterfig)
 
+with ins4:
+    scatterfig2 = px.scatter(hero_df,
+                            x='overall rating average',
+                            y='overall rating count',
+                            size='total user workouts',
+                            marginal_x='box',
+                            color='fitness discipline',
+                            hover_data=['title', 'premiere', 'average difficulty rating', 'difficulty rating count',
+                                        'overall rating average', 'overall rating count', 'total user workouts'])
+    scatterfig2.update_layout(
+        title_text='Average User Rating of Classes Instructed',
+        autosize=False,
+        width=650,
+        height=600)
+    scatterfig2.update_xaxes(
+        tickvals=np.arange(0, 101))
+    st.plotly_chart(scatterfig2)
