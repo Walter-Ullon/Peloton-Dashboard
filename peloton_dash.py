@@ -267,7 +267,7 @@ instructors_df = get_instructors_data()
 
 # plot data:
 with ins1:
-    instructor = st.selectbox('Please Select your Peloton Hero: ', instructors_df['name'], index=31)
+    instructor = st.selectbox('Please Select your Peloton Hero: ', instructors_df['name'], index=17)
     image_url = instructors_df.loc[instructors_df['name'] == instructor, 'about_image_url'].values[0]
     instructor_quote = instructors_df.loc[instructors_df['name'] == instructor, 'quote'].values[0].replace('“', '').replace('”', '')
     st.image(image_url, width=300)
