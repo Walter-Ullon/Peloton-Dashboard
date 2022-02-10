@@ -18,7 +18,7 @@ def unix_date_converter(date_series):
 
 
 # get a dataframe of all instructors plus their quotes, hero pictures, etc:
-@st.experimental_memo()
+@st.experimental_singleton()
 def get_instructors_data():
     instructors = s.get('https://api.onepeloton.com/api/instructor?limit=100').json()
     instructors_df = pd.DataFrame.from_dict(instructors['data'])

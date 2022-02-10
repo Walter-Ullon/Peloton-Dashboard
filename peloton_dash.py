@@ -7,6 +7,7 @@ from os import listdir
 from os.path import isfile, join
 from api_functions import *
 from humanfriendly import format_timespan
+from datetime import datetime, timedelta
 
 
 # set global page layout:
@@ -230,16 +231,16 @@ with column_right:
     fig2.update_xaxes(tickangle=45)
     st.plotly_chart(fig2)
 
-st.markdown('---')
-
-
 ########################################################################################################################
 # Instructor section:
 ########################################################################################################################
+st.markdown("""<hr style="height:4px;border:none;color:#d8d4dc;background-color:#d8d4dc;" /> """, unsafe_allow_html=True)
+st.markdown('### Peloton Heroes and their Class Stats:')
+
 @st.experimental_singleton()
 def load_class_data(file):
     if file is not None:
-        classes_df = pd.read_csv(file)
+        classes_df = pd.read_csv(file, low_memory=False)
         classes_df = classes_df.rename(columns={'difficulty_rating_avg': 'average difficulty rating',
                                                 'fitness_discipline_display_name': 'fitness discipline',
                                                 'difficulty_rating_count': 'difficulty rating count',
@@ -247,6 +248,7 @@ def load_class_data(file):
                                                 'overall_rating_avg': 'overall rating average',
                                                 'overall_rating_count': 'overall rating count',
                                                 'total_workouts': 'total user workouts'})
+        classes_df['duration secs'] = classes_df['duration']
         classes_df['duration'] = [format_timespan(x) for x in sorted(classes_df['duration'])]
         classes_df['premiere'] = [x.split(' ')[0] for x in classes_df['premiere']]
         classes_df['average difficulty rating'] = classes_df['average difficulty rating'].apply(lambda x: round(x, 2))
@@ -258,7 +260,7 @@ def load_class_data(file):
 # load and preprocess class data:
 classes_df = load_class_data('./data/class_data/master_classes.csv')
 
-ins1, ins2, ins3, ins4 = st.columns([0.7, 1, 1, 1])
+ins1, ins2, ins3, ins4 = st.columns([0.5, 1, 1, 1])
 
 # pull instructor data:
 instructors_df = get_instructors_data()
@@ -272,36 +274,20 @@ with ins1:
     st.markdown('"' + instructor_quote + '"')
     
 with ins2:
-    hero_df = classes_df[classes_df['instructor_name'] == instructor]
+    # TODO: need a way to update metrics so we can avoid zeros in the rating counts
+    hero_df = classes_df[(classes_df['instructor_name'] == instructor) & (classes_df['overall rating count'] != 0)]
     diff_array = sorted(list(hero_df['duration']), reverse=True)
     difficultyfig = count_histogram(hero_df, 'fitness discipline', 'duration', 650, 600, diff_array)
     difficultyfig.update_layout(title_text='Count of Classes Instructed by Discipline')
     st.plotly_chart(difficultyfig)
 
 with ins3:
-    scatterfig = px.scatter(hero_df,
-                            x='average difficulty rating',
-                            y='difficulty rating count',
-                            size='total user workouts',
-                            marginal_x='box',
-                            color='fitness discipline',
-                            hover_data=['title', 'premiere', 'average difficulty rating', 'difficulty rating count',
-                                        'overall rating average', 'overall rating count', 'total user workouts'])
-    scatterfig.update_layout(
-        title_text='Average Difficulty Rating of Classes Instructed',
-        autosize=False,
-        width=650,
-        height=600)
-    scatterfig.update_xaxes(
-        tickvals=np.arange(0, 11))
-    st.plotly_chart(scatterfig)
-
-with ins4:
     scatterfig2 = px.scatter(hero_df,
                             x='overall rating average',
                             y='overall rating count',
                             size='total user workouts',
                             marginal_x='box',
+                            marginal_y='box',
                             color='fitness discipline',
                             hover_data=['title', 'premiere', 'average difficulty rating', 'difficulty rating count',
                                         'overall rating average', 'overall rating count', 'total user workouts'])
@@ -312,4 +298,131 @@ with ins4:
         height=600)
     scatterfig2.update_xaxes(
         tickvals=np.arange(0, 101))
+    scatterfig2.update_traces(notched=False, selector=dict(type='box'))
     st.plotly_chart(scatterfig2)
+
+with ins4:
+    scatterfig = px.scatter(hero_df,
+                            x='average difficulty rating',
+                            y='difficulty rating count',
+                            size='total user workouts',
+                            marginal_x='box',
+                            marginal_y='box',
+                            color='fitness discipline',
+                            hover_data=['title', 'premiere', 'average difficulty rating', 'difficulty rating count',
+                                        'overall rating average', 'overall rating count', 'total user workouts'])
+    scatterfig.update_layout(
+        title_text='Average Difficulty Rating of Classes Instructed',
+        autosize=False,
+        width=650,
+        height=600)
+    scatterfig.update_xaxes(
+        tickvals=np.arange(0, 11))
+    scatterfig.update_traces(notched=False, selector=dict(type='box'))
+    st.plotly_chart(scatterfig)
+
+st.markdown('---')
+
+########################################################################################################################
+# Instructor KPIs:
+########################################################################################################################
+# instructor KPIs:
+inskpi0, inskpi1, inskpi2, inskpi3, inskpi4, inskpi5, inskpi6 = st.columns([0.2, 1, 1, 1, 1, 1, 1])
+
+with inskpi1:
+    total_instructed = '{:,}'.format(len(hero_df['instructor_id']))
+    inskpi1.metric(label='Total Classes Instructed:', value=total_instructed)
+
+with inskpi2:
+    total_user_workouts = '{:,}'.format(hero_df['total user workouts'].sum()) + '+'
+    inskpi2.metric(label='Total User Workouts:', value=total_user_workouts)
+
+with inskpi3:
+    median_quality_rating = '{:.2f}'.format(hero_df['overall rating average'].median())
+    inskpi3.metric(label='Median Rating Across All Classes:', value=median_quality_rating)
+
+with inskpi4:
+    avg_rating_per_class = '{:,.0f}'.format(hero_df['overall rating count'].sum() / len(hero_df['instructor_id']))
+    inskpi4.metric(label='Average Number of Rating per Class:', value=avg_rating_per_class)
+
+with inskpi5:
+    median_difficulty_rating = '{:.2f}'.format(hero_df['average difficulty rating'].median())
+    inskpi5.metric(label='Median Difficulty Rating:', value=median_difficulty_rating)
+
+with inskpi6:
+    total_hours_instructed = '{:,.1f}'.format(hero_df['duration secs'].sum() / 3600) + ' hours'
+    inskpi6.metric(label='Total Hours of Instruction:', value=total_hours_instructed)
+
+st.markdown('---')
+
+########################################################################################################################
+# Instructor Best and Worst classes:
+########################################################################################################################
+# ride images:
+insimages0, insimages1, insimages2, insimages3, insimages4 = st.columns([0.2, 1, 1, 1, 1])
+
+# lag ratings dataframe by one month to give classes a chance to rack up ratings:
+ratings_df = hero_df[pd.to_datetime(hero_df['premiere']) < pd.to_datetime(datetime.today() - timedelta(days=15))]
+
+with insimages1:
+    most_rated_ride_img = ratings_df.loc[ratings_df['overall rating count'] == ratings_df['overall rating count'].max(),
+                                         'image_url'].values[0]
+    most_rated_ride_title = ratings_df.loc[ratings_df['overall rating count'] == ratings_df['overall rating count'].max(),
+                                           'title'].values[0]
+    st.markdown('Most Rated Class: ' + most_rated_ride_title)
+    most_rated_ride_premiere = ratings_df.loc[ratings_df['overall rating count'] == ratings_df['overall rating count'].max(),
+                                           'premiere'].values[0]
+    most_rated_ride_count = '{:,}'.format(ratings_df['overall rating count'].max()) + ' ratings'
+    st.image(most_rated_ride_img, width=400)
+    st.markdown('premiered on ' + most_rated_ride_premiere + " (" + most_rated_ride_count + ")")
+
+with insimages2:
+    highest_rated_ride_img = ratings_df.loc[ratings_df['overall rating average'] ==
+                                            ratings_df['overall rating average'].max(), 'image_url'].values[0]
+    highest_rated_ride_title = ratings_df.loc[ratings_df['overall rating average'] ==
+                                              ratings_df['overall rating average'].max(), 'title'].values[0]
+    st.markdown('Highest Rated Class: ' + highest_rated_ride_title)
+    highest_rated_ride_premiere = ratings_df.loc[ratings_df['overall rating average'] ==
+                                                 ratings_df['overall rating average'].max(), 'premiere'].values[0]
+    highest_rated_ride_count = '{:,}'.format(ratings_df['overall rating average'].max()) + ' average rating'
+    st.image(highest_rated_ride_img, width=400)
+    st.markdown('premiered on ' + highest_rated_ride_premiere + " (" + highest_rated_ride_count + ")")
+
+with insimages3:
+    most_difficult_ride_img = ratings_df.loc[ratings_df['average difficulty rating'] ==
+                                             ratings_df['average difficulty rating'].max(), 'image_url'].values[0]
+    most_difficult_ride_title = ratings_df.loc[ratings_df['average difficulty rating'] ==
+                                               ratings_df['average difficulty rating'].max(), 'title'].values[0]
+    st.markdown('Most Difficult Class: ' + most_difficult_ride_title)
+    most_difficult_ride_premiere = ratings_df.loc[ratings_df['average difficulty rating'] ==
+                                                  ratings_df['average difficulty rating'].max(), 'premiere'].values[0]
+    most_difficult_ride_count = '{:,}'.format(ratings_df['average difficulty rating'].max()) + \
+                                ' average difficulty rating'
+    st.image(most_difficult_ride_img, width=400)
+    st.markdown('premiered on ' + most_difficult_ride_premiere + " (" + most_difficult_ride_count + ")")
+
+with insimages4:
+    lowest_rated_ride_img = ratings_df.loc[ratings_df['overall rating average'] ==
+                                            ratings_df['overall rating average'].min(), 'image_url'].values[0]
+    lowest_rated_ride_title = ratings_df.loc[ratings_df['overall rating average'] ==
+                                              ratings_df['overall rating average'].min(), 'title'].values[0]
+    st.markdown('Lowest Rated Class: ' + lowest_rated_ride_title)
+    lowest_rated_ride_premiere = ratings_df.loc[ratings_df['overall rating average'] ==
+                                                 ratings_df['overall rating average'].min(), 'premiere'].values[0]
+    lowest_rated_ride_count = '{:,}'.format(ratings_df['overall rating average'].min()) + ' average rating'
+    st.image(lowest_rated_ride_img, width=400)
+    st.markdown('premiered on ' + lowest_rated_ride_premiere + " (" + lowest_rated_ride_count + ")")
+
+# with st.expander("Note:"):
+#     st.markdown('The data for this subsection has been "lagged" by 30 days to allow classes to rack up ratings and '
+#                 'give a more accurate representation of the true user ratings. Thus, only classes that have premiered '
+#                 'up to one month (from today) are used to find the highest and lowest rated classes. This avoids '
+#                 'having classes with few but inflated ratings, and other with few but heavily penalized scores.')
+st.markdown('---')
+with st.expander("COMING SOON:"):
+    st.markdown("I'm looking to add two more sections to this project: one on publicly available instructor workouts"
+                " (classes they've taken as opposed to instructed) so that users can see how they stack up against "
+                "their peloton faves. And one on the overall stats for the peloton ecosystem, "
+                "(highest rated classes overall, total number of user workouts, etc. With all the talk about a "
+                "possible acquisition by bigger brands, it'd be interesting to see what the available data says "
+                "they'd be getting in terms of impressions, etc...")
