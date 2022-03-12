@@ -3,7 +3,7 @@ Peloton dashboard app built with Plotly and Streamlit.
 
 Built it primarily as a personal tool to keep track of my progress at an aggregated level.
 
-I eventually, I added the functionality for users to upload their own workouts data and made use of Peloton's API to get global statistics on their instructors/
+I eventually, I added the functionality for users to upload their own workouts data and made use of Peloton's API to get global statistics on their instructors.
 
 I made the app publicly available through https://mypelotondashboardapp.com. However, Peloton made me take it down...🤣
 
