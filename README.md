@@ -8,9 +8,9 @@ I eventually, I added the functionality for users to upload their own workouts d
 I made the app publicly available through https://mypelotondashboardapp.com. However, Peloton made me take it down...🤣
 
 ### Usage:
-To run this locally, you'll need your own Peloton app credentials (your member name and password). Enter these at the top of the api_functions.py file.
+To run this locally, you'll need your own Peloton app credentials (your member name and password). Enter these at the top of the **`api_functions.py`** file.
 
-Run the app by calling the peloton_dash.py file and enterign the resulting command line into your terminal.
+Run the app by calling the **`peloton_dash.py`** file and entering the resulting command line into your terminal.
 
 
 ![UI1](./images/ui1.png)
