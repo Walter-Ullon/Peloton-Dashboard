@@ -5,7 +5,7 @@ Built it primarily as a personal tool to keep track of my progress at an aggrega
 
 I eventually, I added the functionality for users to upload their own workouts data and made use of Peloton's API to get global statistics on their instructors.
 
-I made the app publicly available through https://mypelotondashboardapp.com. However, Peloton made me take it down...🤣
+I made the app publicly available through https://mypelotondashboardapp.com. However, Peloton made me take it down...🤣 I did not intended it as a commercial enterprisem nor did I ever make any money off of it. It's for personal use only. 
 
 ### Usage:
 To run this locally, you'll need your own Peloton app credentials (your member name and password). Enter these at the top of the **`api_functions.py`** file.
