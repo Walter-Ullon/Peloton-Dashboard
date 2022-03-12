@@ -5,8 +5,9 @@ from datetime import datetime
 from feature_engineering_functions import *
 
 # initiate session:
+# you will need to supply your own credentials below:
 s = requests.Session()
-payload = {'username_or_email':'RuntimeT3rror', 'password':'Brielle2021'}
+payload = {'username_or_email':'your_username', 'password':'your_password'}
 s.post('https://api.onepeloton.com/auth/login', json=payload)
 
 
@@ -167,7 +168,8 @@ def get_class_diff():
     categories_df = pd.DataFrame.from_dict(wo_categories['browse_categories'])
     
     # read master file with saved classes up to date:
-    master_df = pd.read_csv('./data/class_data/master_classes.csv', low_memory=False)
+    # master_df = pd.read_csv('./data/class_data/master_classes.csv', low_memory=False)
+    master_df = pd.read_csv('/Users/walter/Desktop/PELOTON_DATA/classes_data/master_classes.csv', low_memory=False)
     master_slug_ids_set = set(master_df['id'])
     
     # set empty df to contain the difference in records (new classes not in master file):
@@ -184,6 +186,7 @@ def get_class_diff():
     found = False
     try:
         for page_num in range(page_count + 1):
+            print(page_num)
             # get url for category and specific page number:
             page_url = rides_url + '&page=' + str(page_num)
 
@@ -221,8 +224,8 @@ def get_class_diff():
         updated_master_df = master_df
         pass
     
-    updated_master_df.to_csv('./data/class_data/master_classes.csv', index=None)
-
+    # updated_master_df.to_csv('./data/class_data/master_classes.csv', index=None)
+    updated_master_df.to_csv('/Users/walter/Desktop/PELOTON_DATA/classes_data/master_classes.csv', index=None)
 
 # looks for differences between instructor taken classes available online, versus the ones on file:
 def get_instructor_workouts_diff(user_id, instructors_df):
